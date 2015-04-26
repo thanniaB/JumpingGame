@@ -20,16 +20,17 @@ enum BlockType: Int {
 class Block: Printable, Hashable {
     var column: Int
     var row: Int
-    var x: Int
     let blockType: BlockType
     var sprite: SKSpriteNode?
-    var label: SKLabelNode?
+    var isLast: Bool;
+    var isNew: Bool;
     
-    init(column: Int, row: Int, blockType: BlockType, x: Int) {
+    init(column: Int, row: Int, blockType: BlockType, isLast: Bool, isNew: Bool) {
         self.column = column
         self.row = row
         self.blockType = blockType
-        self.x = x
+        self.isLast = isLast;
+        self.isNew = isNew;
     }
     
     var hashValue: Int {
@@ -37,7 +38,7 @@ class Block: Printable, Hashable {
     }
     
     var description: String {
-        return "column: \(column), row: \(row)"
+        return "column: \(column), row: \(row), isLast?: \(isLast), isNew?: \(isNew)"
     }
     
 }

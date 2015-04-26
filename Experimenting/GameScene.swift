@@ -47,7 +47,7 @@ class GameScene: SKScene {
         for row in 0..<NumRows {
             for column in 0..<NumColumns {
                 var blockType = BlockType.random();
-                let block = Block(column: column, row: row, blockType: blockType, x: 0);
+                let block = Block(column: column, row: row, blockType: blockType, isLast: false, isNew: false);
                 world[column, row] = block;
                 set.addElement(block);
             }
@@ -103,18 +103,24 @@ class GameScene: SKScene {
         for block in blocks {
             currentBlockSprite = block.sprite!;
             currentBlockSprite.runAction(constantMovement);
-            if(block.column == NumColumns - 1 && currentBlockSprite.position.x < frame.maxX) {
-                println("IT GOT IN");
-                for block in blocks {
-                    println("before: " + block.description);
-                    block.column = block.column - 1;
-                    println("after: " + block.description);
-                }
+            if(block.column == NumColumns - 1) {
+                block.isLast = true;
+            }
+            
+            if(block.isNew) {
+                println("position \(currentBlockSprite.position.x) has actions \(currentBlockSprite.hasActions())");
+            }
+            
+            if(block.isLast && currentBlockSprite.position.x < frame.maxX - 50) {
+                println("the block that hits is " + block.description);
+                println("HITS AT \(currentBlockSprite.position.x)");
+                block.isLast = false;
+               
                 for row in 0..<NumRows {
-                    newBlock = Block(column: NumColumns - 1, row: row, blockType: BlockType.random(), x: 0);
+                    newBlock = Block(column: NumColumns - 1, row: row, blockType: BlockType.random(), isLast: true, isNew: true);
                     blocks.addElement(newBlock);
                     addBlockSprite(newBlock);
-                    println("new block: " + newBlock.description);
+                    println("new block: " + newBlock.description + "position \(newBlock.sprite?.position.x)");
                 }
             }
 
