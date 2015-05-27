@@ -10,20 +10,43 @@ import SpriteKit
 
 class GameScene: SKScene {
     
-    let mainChar = SKSpriteNode(imageNamed:"Spaceship");
+    let mainChar = SKSpriteNode(imageNamed:"hero");
     let background = SKSpriteNode(imageNamed: "background");
-    let block = SKSpriteNode(imageNamed: "block");
     var randomNum: UInt32 = 0;
     let NumColumns = 14;
     let NumRows = 4;
     var world = Array2D<Block>(columns: 14, rows: 4);
     var blocks = Set<Block>();
+    var blockId: Int = 0;
     
     func addBlockSprite(block: Block) {
-        let blockSprite = SKSpriteNode(imageNamed: "block");
+        var blockSprite: SKSpriteNode;
+        if (block.isNew){
+            blockSprite = SKSpriteNode(imageNamed: "block2");
+            blockId = blockId + 1;
+        } else {
+            blockSprite = SKSpriteNode(imageNamed: "block1");
+        }
+        
         blockSprite.position = pointForColumn(block.column, row:block.row);
+        
         if(block.blockType != BlockType.Empty) {
             addChild(blockSprite);
+            
+            let constantMovement = SKAction.moveByX(-10, y: 0, duration: 1)
+            var currentBlockSprite:SKSpriteNode
+            
+            let checkPosition = SKAction.runBlock({ () -> Void in
+                if(blockSprite.position.x < self.frame.minX){
+                    blockSprite.removeAllActions()
+                    blockSprite.removeFromParent()
+                }
+            })
+            
+            let movementSequence = SKAction.sequence([constantMovement, checkPosition])
+            
+            let constantlyCheckPosition = SKAction.repeatActionForever(movementSequence)
+            blockSprite.runAction(constantlyCheckPosition)
         }
         block.sprite = blockSprite;
     }
@@ -47,7 +70,7 @@ class GameScene: SKScene {
         for row in 0..<NumRows {
             for column in 0..<NumColumns {
                 var blockType = BlockType.random();
-                let block = Block(column: column, row: row, blockType: blockType, isLast: false, isNew: false);
+                let block = Block(column: column, row: row, blockType: blockType, isLast: false, isNew: false, id: blockId);
                 world[column, row] = block;
                 set.addElement(block);
             }
@@ -78,11 +101,20 @@ class GameScene: SKScene {
             let moveRight = SKAction.moveByX(50, y:0, duration:0.1);
             let moveLeft = SKAction.moveByX(-50, y:0, duration:0.1);
             
+            println("blocks");
+            println(blocks.allElements().count);
+            
             for block in blocks {
                 
                 if(touchLocation.x < CGRectGetMidX(self.frame)) {
+//                    println("touch left");
+//                    println(block.description);
+//                    println(blocks.containsElement(block));
                     block.sprite?.runAction(moveRight);
                 } else {
+//                    println("touch right");
+//                    println(block.description);
+//                    println(blocks.containsElement(block));
                     block.sprite?.runAction(moveLeft);
                 }
             }
@@ -93,7 +125,7 @@ class GameScene: SKScene {
    
     override func update(currentTime: CFTimeInterval) {
         /* Called before each frame is rendered */
-        let constantMovement = SKAction.moveByX(-1, y: 0, duration: 10);
+        let constantMovement = SKAction.moveByX(-1, y: 0, duration: 100);
         background.runAction(SKAction.repeatActionForever(constantMovement));
         let removeBlock = SKAction.removeFromParent();
         let frame = self.frame;
@@ -102,32 +134,27 @@ class GameScene: SKScene {
         
         for block in blocks {
             currentBlockSprite = block.sprite!;
-            currentBlockSprite.runAction(constantMovement);
             if(block.column == NumColumns - 1) {
                 block.isLast = true;
             }
             
-            if(block.isNew) {
-                println("position \(currentBlockSprite.position.x) has actions \(currentBlockSprite.hasActions())");
+            if(currentBlockSprite.position.x < self.frame.minX){
+                blocks.removeElement(block);
             }
             
-            if(block.isLast && currentBlockSprite.position.x < frame.maxX - 50) {
-                println("the block that hits is " + block.description);
-                println("HITS AT \(currentBlockSprite.position.x)");
+            if(block.isLast && currentBlockSprite.position.x < frame.maxX - 40) {
                 block.isLast = false;
-               
+                
                 for row in 0..<NumRows {
-                    newBlock = Block(column: NumColumns - 1, row: row, blockType: BlockType.random(), isLast: true, isNew: true);
+                    newBlock = Block(column: NumColumns - 1, row: row, blockType: BlockType.random(), isLast: true, isNew: true, id: blockId);
                     blocks.addElement(newBlock);
                     addBlockSprite(newBlock);
-                    println("new block: " + newBlock.description + "position \(newBlock.sprite?.position.x)");
+                    println(blocks.containsElement(newBlock));
+                    println(blocks.count);
+                    println(blocks.allElements());
                 }
             }
 
-            if(currentBlockSprite.position.x < frame.minX) {
-                currentBlockSprite.runAction(removeBlock);
-                blocks.removeElement(block);
-            }
         }
       
     }
