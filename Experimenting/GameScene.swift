@@ -15,19 +15,13 @@ class GameScene: SKScene {
     var randomNum: UInt32 = 0;
     let NumColumns = 14;
     let NumRows = 4;
-    var world = Array2D<Block>(columns: 14, rows: 4);
-    var blocks = Set<Block>();
-    var blockId: Int = 0;
+    var columnList = [BlockColumn]();
+    var columnCount = 13;
     
     func addBlockSprite(block: Block) {
         var blockSprite: SKSpriteNode;
-        if (block.isNew){
-            blockSprite = SKSpriteNode(imageNamed: "block2");
-            blockId = blockId + 1;
-        } else {
-            blockSprite = SKSpriteNode(imageNamed: "block1");
-        }
-        
+        // if block type cambiar sprite blah blah
+        blockSprite = SKSpriteNode(imageNamed: "block1");
         blockSprite.position = pointForColumn(block.column, row:block.row);
         
         if(block.blockType != BlockType.Empty) {
@@ -51,31 +45,33 @@ class GameScene: SKScene {
         block.sprite = blockSprite;
     }
     
-    func addSpritesForBlocks(blockSet: Set<Block>) {
-        for block in blockSet {
-            addBlockSprite(block);
-        }
-        blocks = blockSet;
-    }
     
-    func pointForColumn(column: Int, row: Int) -> CGPoint {
+    func pointForColumn(var column: Int, row: Int) -> CGPoint {
+        if(column > 14) {
+            column = 14;
+        }
+        
         return CGPoint(
             x: CGFloat(column)*50 + 25,
             y: CGFloat(row)*50 + 50);
     }
     
-    func setUpWorld() -> Set<Block> {
-        var set = Set<Block>();
-        
-        for row in 0..<NumRows {
-            for column in 0..<NumColumns {
-                var blockType = BlockType.random();
-                let block = Block(column: column, row: row, blockType: blockType, isLast: false, isNew: false, id: blockId);
-                world[column, row] = block;
-                set.addElement(block);
-            }
+    func createColumn(x: Int) -> BlockColumn {
+        var newColumn: BlockColumn;
+        var blocks = [Block]();
+        for (var row = 0; row < NumRows; row++) { //just one column
+            blocks.append(Block(column: x, row: row, blockType: BlockType.random()));
+            addBlockSprite(blocks[row]);
         }
-        return set;
+        newColumn = BlockColumn(blocks: blocks);
+        return newColumn;
+    }
+    
+    func setUpWorld() {
+        for(var x = 0; x < NumColumns; x++){ // whole world
+            columnList.append(createColumn(x));
+        }
+        
     }
     
     override func didMoveToView(view: SKView) {
@@ -89,7 +85,7 @@ class GameScene: SKScene {
         self.addChild(background);
         self.addChild(mainChar);
         
-        addSpritesForBlocks(setUpWorld()); //world on screen
+        setUpWorld();
 
     }
     
@@ -101,24 +97,21 @@ class GameScene: SKScene {
             let moveRight = SKAction.moveByX(50, y:0, duration:0.1);
             let moveLeft = SKAction.moveByX(-50, y:0, duration:0.1);
             
-            println("blocks");
-            println(blocks.allElements().count);
             
-            for block in blocks {
-                
-                if(touchLocation.x < CGRectGetMidX(self.frame)) {
-//                    println("touch left");
-//                    println(block.description);
-//                    println(blocks.containsElement(block));
-                    block.sprite?.runAction(moveRight);
-                } else {
-//                    println("touch right");
-//                    println(block.description);
-//                    println(blocks.containsElement(block));
-                    block.sprite?.runAction(moveLeft);
+            for column in columnList {
+                for block in column.blocks {
+                    if(touchLocation.x < CGRectGetMidX(self.frame)) {
+                        block.sprite?.runAction(moveRight);
+                        columnList[0].updatePosition();
+                        columnList[columnList.count - 1].updatePosition();
+                    } else {
+                        block.sprite?.runAction(moveLeft);
+                        columnList[0].updatePosition();
+                        columnList[columnList.count - 1].updatePosition();
+                    }
                 }
+                
             }
-            
             
         }
     }
@@ -129,33 +122,38 @@ class GameScene: SKScene {
         background.runAction(SKAction.repeatActionForever(constantMovement));
         let removeBlock = SKAction.removeFromParent();
         let frame = self.frame;
-        var currentBlockSprite:SKSpriteNode;
-        var newBlock: Block;
         
-        for block in blocks {
-            currentBlockSprite = block.sprite!;
-            if(block.column == NumColumns - 1) {
-                block.isLast = true;
-            }
-            
-            if(currentBlockSprite.position.x < self.frame.minX){
-                blocks.removeElement(block);
-            }
-            
-            if(block.isLast && currentBlockSprite.position.x < frame.maxX - 40) {
-                block.isLast = false;
-                
-                for row in 0..<NumRows {
-                    newBlock = Block(column: NumColumns - 1, row: row, blockType: BlockType.random(), isLast: true, isNew: true, id: blockId);
-                    blocks.addElement(newBlock);
-                    addBlockSprite(newBlock);
-                    println(blocks.containsElement(newBlock));
-                    println(blocks.count);
-                    println(blocks.allElements());
-                }
-            }
-
+        println("ARRAY:");
+        for column in columnList {
+            println(column.blocks[0].description);
+            column.updatePosition();
         }
+        
+        println("ARRAY TOTAL: \(columnList.count)");
+        println("first");
+        println(columnList[0].xPosition);
+        println(columnList[0].blocks[0].sprite?.position.x);
+        println(columnList[0].blocks[0].description);
+        println("last");
+        println(columnList[columnList.count - 1].xPosition);
+        println(columnList[columnList.count - 1].blocks[0].sprite?.position.x);
+        println(columnList[columnList.count - 1].blocks[0].description);
+        
+        columnList[0].updatePosition();
+        columnList[columnList.count - 1].updatePosition();
+        
+        if(columnList[0].xPosition < frame.minX) {
+            println("DELETED!");
+            columnList.removeAtIndex(0);
+        }
+        
+        if(columnList[columnList.count - 1].xPosition < frame.maxX) {
+            // siento que esto va a tronar
+            println("IT CROSSED");
+            columnCount = columnCount + 1;
+            columnList.insert(createColumn(columnCount), atIndex: columnList.count);
+        }
+        
       
     }
 }

@@ -22,17 +22,11 @@ class Block: Printable, Hashable {
     var row: Int
     let blockType: BlockType
     var sprite: SKSpriteNode?
-    var isLast: Bool;
-    var isNew: Bool;
-    var id: Int
     
-    init(column: Int, row: Int, blockType: BlockType, isLast: Bool, isNew: Bool, id: Int) {
+    init(column: Int, row: Int, blockType: BlockType) {
         self.column = column
         self.row = row
         self.blockType = blockType
-        self.isLast = isLast;
-        self.isNew = isNew;
-        self.id = id;
     }
     
     var hashValue: Int {
@@ -40,7 +34,7 @@ class Block: Printable, Hashable {
     }
     
     var description: String {
-        return "id: \(id), column: \(column), row: \(row), isLast?: \(isLast), isNew?: \(isNew)"
+        return "column: \(column), row: \(row)"
     }
     
 }
